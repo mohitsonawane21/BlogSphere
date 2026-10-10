@@ -1,6 +1,6 @@
 # BlogSphere — Premium Editorial Blogging Platform 🚀
 
-BlogSphere is a full-stack publishing platform designed with editorial aesthetics, responsive user experience, robust REST APIs, and MongoDB data persistence.
+BlogSphere is a modern full-stack publishing platform designed with editorial aesthetics, responsive user experience, robust REST APIs, and MongoDB data persistence.
 
 ---
 
@@ -37,71 +37,58 @@ BlogSphere is a full-stack publishing platform designed with editorial aesthetic
 
 ## ⚙️ Environment Configuration
 
-### Backend `.env`
-Create a `.env` file in the `backend/` directory based on `backend/.env.example`:
-
+### Backend `.env` (`backend/.env.example`)
 ```env
 PORT=5000
 MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/BlogSphere?retryWrites=true&w=majority
 JWT_SECRET=your_super_secret_jwt_key_here
-CLIENT_ORIGIN=http://localhost:5173
-NODE_ENV=development
+CLIENT_ORIGIN=https://blogsphere.vercel.app
+NODE_ENV=production
+```
+
+### Frontend `.env` (`frontend/.env.example`)
+```env
+VITE_API_URL=https://blogsphere-backend.onrender.com/api
 ```
 
 ---
 
-## 🚀 Quick Startup Instructions
+## 🌐 Production Deployment Guide
 
-### 1. Run the Backend Server
-```bash
-cd backend
-npm install
-npm run dev # Runs nodemon on http://localhost:5000
-```
+### Step 1: MongoDB Atlas Preparation
+1. Log in to [MongoDB Atlas](https://cloud.mongodb.com/).
+2. Under **Network Access**, add IP `0.0.0.0/0` (Allow Access from Anywhere) so Render cloud instances can connect.
+3. Obtain your database connection string under **Database > Connect**.
 
-### 2. Run the Frontend Client
-```bash
-cd frontend
-npm install
-npm run dev # Runs Vite dev server on http://localhost:5173
-```
+### Step 2: Deploy Backend to Render
+1. Go to [Render Dashboard](https://dashboard.render.com/) and click **New > Web Service**.
+2. Connect your GitHub repository.
+3. Configure the service settings:
+   - **Root Directory**: `backend`
+   - **Environment**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `node server.js`
+4. Add **Environment Variables**:
+   - `MONGO_URI` = `your_mongodb_atlas_connection_string`
+   - `JWT_SECRET` = `your_random_secret_string`
+   - `CLIENT_ORIGIN` = `https://your-frontend-app.vercel.app`
+   - `NODE_ENV` = `production`
+5. Click **Create Web Service**. Once deployed, copy your API URL (e.g. `https://blogsphere-backend.onrender.com`).
 
----
-
-## 📡 API Endpoint Reference
-
-### Authentication (`/api/auth`)
-| Method | Endpoint | Description | Access |
-|---|---|---|---|
-| `POST` | `/api/auth/register` | Register new user account | Public (Rate-limited) |
-| `POST` | `/api/auth/login` | Authenticate user & get JWT | Public (Rate-limited) |
-| `GET` | `/api/auth/me` | Restore authenticated user profile | Private |
-| `PUT` | `/api/auth/profile` | Update name, bio, avatar | Private |
-| `GET` | `/api/auth/user/:id` | Fetch public author profile | Public |
-
-### Articles (`/api/posts`)
-| Method | Endpoint | Description | Access |
-|---|---|---|---|
-| `GET` | `/api/posts` | Fetch articles with search, filter, sort & pagination | Public |
-| `POST` | `/api/posts` | Create a new article or draft | Private |
-| `GET` | `/api/posts/meta/categories` | Fetch category list & popular tags | Public |
-| `GET` | `/api/posts/user/bookmarks` | Fetch user's bookmarked articles | Private |
-| `GET` | `/api/posts/:id` | Fetch single article with author & related stories | Public |
-| `PUT` | `/api/posts/:id` | Edit existing article | Private (Author only) |
-| `DELETE` | `/api/posts/:id` | Delete article | Private (Author only) |
-| `POST` | `/api/posts/:id/like` | Toggle like status on article | Private |
-| `POST` | `/api/posts/:id/bookmark` | Toggle bookmark status on article | Private |
-
-### Comments (`/api/comments`)
-| Method | Endpoint | Description | Access |
-|---|---|---|---|
-| `GET` | `/api/comments/:postId` | Fetch comments for an article | Public |
-| `POST` | `/api/comments/:postId` | Submit a comment | Private |
-| `DELETE` | `/api/comments/:id` | Delete comment | Private (Author or Post Owner) |
+### Step 3: Deploy Frontend to Vercel
+1. Go to [Vercel Dashboard](https://vercel.com/new) and import your GitHub repository.
+2. Configure the project:
+   - **Root Directory**: Select `frontend`
+   - **Framework Preset**: `Vite`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+3. Add **Environment Variable**:
+   - `VITE_API_URL` = `https://blogsphere-backend.onrender.com/api`
+4. Click **Deploy**. Vercel will automatically configure SPA routing using `frontend/vercel.json`.
 
 ---
 
-## 🧪 Verification & Testing Executed
+## 🧪 Verification & Local Testing Executed
 
 - **Backend Automated Test**: Executed `node test_api.js` verifying Mongo Atlas database connection, User registration, JWT creation/decoding, Post CRUD, Likes/Bookmarks schema, and Comment thread logic (100% pass).
 - **Frontend Linter**: Executed `npm run lint` on React code (0 errors, 0 warnings).
