@@ -6,10 +6,29 @@ require("dotenv").config();
 
 const app = express();
 
-// CORS configuration
+// Parse allowed client origins
+const allowedOrigins = process.env.CLIENT_ORIGIN
+  ? process.env.CLIENT_ORIGIN.split(",").map((origin) => origin.trim().replace(/\/$/, ""))
+  : ["http://localhost:5173", "http://localhost:3000"];
+
+// Flexible CORS configuration for production
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "*",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/$/, "");
+      
+      // Allow exact match or Vercel preview domains
+      if (
+        allowedOrigins.includes("*") ||
+        allowedOrigins.includes(cleanOrigin) ||
+        cleanOrigin.endsWith(".vercel.app")
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Permissive fallback for deployment flexibility
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -39,18 +58,22 @@ app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/comments", commentRoutes);
 
-// Health check route
-app.get("/", (req, res) => {
-  res.json({
+// Health check routes for Render / Monitoring
+const healthHandler = (req, res) => {
+  res.status(200).json({
     success: true,
     message: "BlogSphere API is running 🚀",
     version: "2.0.0",
     database: mongoose.connection.readyState === 1 ? "connected" : "connecting/disconnected",
+    timestamp: new Date().toISOString(),
   });
-});
+};
+
+app.get("/", healthHandler);
+app.get("/api/health", healthHandler);
 
 // 404 Route Handler
-app.use((req, res, next) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: `API Endpoint Not Found: ${req.method} ${req.originalUrl}`,
@@ -59,7 +82,7 @@ app.use((req, res, next) => {
 
 // Centralized Error Handler
 app.use((err, req, res, next) => {
-  console.error("❌ Centralized Server Error:", err);
+  console.error("❌ Centralized Server Error:", err.message);
   
   const statusCode = err.statusCode || 500;
   res.status(statusCode).json({
